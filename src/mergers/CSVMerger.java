@@ -27,17 +27,58 @@ public class CSVMerger {
 		
 		final File aggFile = new File("./agg_data.csv");
 		final File inputFile = new File("./data/en/en_0_2014_2015.csv");
+		int[] align = null;
 		
 		try {
-			int[] align = generateColumnAlignment(aggFile, inputFile);
-			System.out.println(align.toString());
+			align = generateColumnAlignment(aggFile, inputFile);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 		
+		/*
+		 * For each item in the list
+		 * Align the columns 
+		 * Generate new lines and append to the agg_data.csv
+		 * */
+		mergeDataFileToAggregateData(aggFile, inputFile, align);
 		
 	}
 	
+	private void mergeDataFileToAggregateData(File aggFile, File inputFile, int[] alignment){
+		int numLines = getNumberLines(inputFile);
+		String[] lines = new String[numLines];
+		String str = "";
+        for(int count = 1; count < numLines; count++) {
+            str = readLine(count,inputFile);
+            lines[count] = alignRow(str,alignment);
+        }
+
+        try {
+			appendToFile(lines, aggFile);
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private String alignRow(String str, int[] alignment) {
+		String[] strArr = str.split(",");
+		String[] newString = new String[strArr.length];
+		for (int i = 0; i < newString.length; i++) {
+			newString[i] = "";
+		}
+		for (int i = 0; i < strArr.length; i++) {// BUG HERE
+			newString[alignment[i]] = strArr[i];
+		}
+		str = newString[0];
+		for (int i = 1; i < newString.length; i++) {
+			str = str + "," + newString[i];
+		}
+		
+		return str;
+	}
+
 	private int[] generateColumnAlignment(File aggFile, File inputFile) throws IOException{
 		
 		BufferedReader brAggFile = new BufferedReader(new FileReader(aggFile));
@@ -64,7 +105,7 @@ public class CSVMerger {
 			}
 			
 			if (alignment[i] == -1) {
-				// TODO expand the aggregated table, add new column
+				//expand the aggregated table, add new column
 				System.out.println("Oops!");
 				alignment[i] = eci;
 				extraColumnNames.add(inputColumns[i]);
@@ -92,7 +133,7 @@ public class CSVMerger {
             lines[count] = readLine(count,aggFile);
         }
         for (String str : extraColumnNames) {
-        	lines[0].concat("," + str);
+        	lines[0] = lines[0].concat("," + str);
             for(int i = 1; i < lines.length; i++){
             	lines[i].concat(",");
             }
@@ -121,6 +162,34 @@ public class CSVMerger {
 		}
 
 		BufferedWriter output = new BufferedWriter(new FileWriter(aFile));
+		try {
+			for(int count = 0; count < lines.length; count++) {
+				output.write(lines[count]);
+				if(count != lines.length - 1) {// This makes sure that an extra new line is not inserted at the end of the file
+					output.newLine();
+				}
+			}
+		}
+		finally {
+			output.close();
+		}
+	}
+	
+	private void appendToFile(String[] lines, File aFile) throws FileNotFoundException, IOException {
+		if (aFile == null) {
+			throw new IllegalArgumentException("File should not be null.");
+		}
+		if (!aFile.exists()) {
+			throw new FileNotFoundException ("File does not exist: " + aFile);
+		}
+		if (!aFile.isFile()) {
+			throw new IllegalArgumentException("Should not be a directory: " + aFile);
+		}
+		if (!aFile.canWrite()) {
+			throw new IllegalArgumentException("File cannot be written: " + aFile);
+		}
+
+		BufferedWriter output = new BufferedWriter(new FileWriter(aFile, true));
 		try {
 			for(int count = 0; count < lines.length; count++) {
 				output.write(lines[count]);
