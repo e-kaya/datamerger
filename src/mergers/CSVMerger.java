@@ -26,7 +26,7 @@ public class CSVMerger {
 	private void testGenerateColumnAlignment(){
 		
 		final File aggFile = new File("./agg_data.csv");
-		final File inputFile = new File("./data/en/en_0_2014_2015.csv");
+		final File inputFile = new File("./in_data.csv");
 		int[] align = null;
 		
 		try {
